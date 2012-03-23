@@ -1,0 +1,76 @@
+Tiny MD-HBase
+
+Tiny MD-HBase realizes a multi-dimensional data store on top of HBase, an 
+ordered key-value store. The basic design is based on the MD-HBase paper[1][2].
+
+Tiny MD-HBase is released as a toy version of MD-HBase. It focuses to 
+provide simple working code samples of multi-dimensional data store features 
+on HBase. Though it does not provide the complete features and highly tuned 
+performance, I hope it helps you to understand how it works.
+
+
+[1] Shoji Nishimura, Sudipto Das, Divyakant Agrawal, Amr El Abbadi,
+    "MD-HBase: A Scalable Multi-dimensional Data. Infrastructure for Location Aware Services"
+    In the 12th International Conference on Mobile Data Management (MDM) 2011, pp 7-16.
+    http://www.cs.ucsb.edu/~sudipto/papers/md-hbase.pdf
+[2] http://www.slideshare.net/nishimurashoji/mdm2011-mdh-base
+
+********
+License
+*******
+
+Tiny MD-HBase is released under Apache License 2.0.
+
+***********
+Compilation
+***********
+
+Just run 
+> mvn package
+
+**********
+Deployment
+**********
+
+Put tiny-mdhase.jar under ${HBASE_HOME}/lib
+
+**********
+How to use
+**********
+
+Start HBase.
+> cd ${HBASE_HOME}
+> bin/start-hbase.sh
+
+
+Put an entity at (x,y).
+> bin/hbase tiny.mdhbase.Client put x y
+
+Tiny MD-HBase only supports non-negative coordinates. Choose non-negative integers
+for x and y. 'put' automatically generates entityID if you omit an ID.
+If you want to specify entity ID, type
+> bin/hbase tiny.mdhbase.Client put x y id
+
+Now you put an entity at (x,y). Check entities at (x,y).
+> bin/hbase tiny.mdhbase.Client get x y
+[entityID, (x,y)]
+
+'get' prints all entities at (x,y). In other word, 'get' is a point 
+query that retrieves all entities at the query point.
+
+
+If you put many entities into the store, the store may split a bucket.
+Type the following command to inspect the index table.
+> bin/hbase tiny.mdhbase.Client index
+
+The default split threshold is 10. If you put more than 10 entities, you will
+observe a bucket split. 
+
+Let's try multi-dimensional range queries.
+'count' prints the number of points within region (xmin, ymin)-(xmax, ymax).
+> bin/hbase tiny.mdhbase.Client count xmin ymin xmax ymax
+
+
+If you want to reset all entries, drop the table.
+> bin/hbase tiny.mdhbase.Client drop
+
