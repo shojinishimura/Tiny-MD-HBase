@@ -120,6 +120,10 @@ public class Bucket {
     return results;
   }
 
+  public Collection<Point> scan() throws IOException {
+    return scan(rangeX, rangeY);
+  }
+
   private void transformResultAndAddToList(Result result, List<Point> found) {
     NavigableMap<byte[], byte[]> map = result.getFamilyMap(FAMILY);
     for (Entry<byte[], byte[]> entry : map.entrySet()) {
@@ -143,6 +147,18 @@ public class Bucket {
     int x = Bytes.toInt(value, 0);
     int y = Bytes.toInt(value, 4);
     return new Point(id, x, y);
+  }
+
+  public double distanceFrom(Point point) {
+    double dx = rangeX.distanceFrom(point.x);
+    double dy = rangeY.distanceFrom(point.y);
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  public Point farthestCornerFrom(Point point) {
+    final int DUMMY = -1;
+    return new Point(DUMMY, rangeX.farthestFrom(point.x),
+        rangeY.farthestFrom(point.y));
   }
 
   /*

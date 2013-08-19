@@ -46,4 +46,20 @@ public class Range {
   public boolean intersect(Range that) {
     return (this.min <= that.max) && (that.min <= this.max);
   }
+
+  public int distanceFrom(int p) {
+    if (include(p)) {
+      return 0;
+    } else {
+      return Math.min(Math.abs(min - p), Math.abs(max - p));
+    }
+  }
+
+  public int farthestFrom(int p) {
+    if (Math.abs(min - p) > Math.abs(max - p)) {
+      return min;
+    } else {
+      return max;
+    }
+  }
 }

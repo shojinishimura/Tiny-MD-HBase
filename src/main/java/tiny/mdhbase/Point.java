@@ -35,6 +35,12 @@ public class Point {
     this.y = y;
   }
 
+  public double distanceFrom(Point that) {
+    double dx = this.x - that.x;
+    double dy = this.y - that.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
   /*
    * (non-Javadoc)
    * 

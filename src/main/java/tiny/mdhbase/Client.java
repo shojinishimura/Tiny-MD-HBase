@@ -17,9 +17,15 @@ package tiny.mdhbase;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.NavigableSet;
+import java.util.PriorityQueue;
 import java.util.Random;
+import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
@@ -74,6 +80,75 @@ public class Client implements Closeable {
       results.addAll(bucket.scan(rx, ry));
     }
     return results;
+  }
+
+  /**
+   * 
+   * @param point
+   * @param k
+   * @return
+   * @throws IOException
+   */
+  public Iterable<Point> nearestNeighbor(final Point point, int k)
+      throws IOException {
+    NavigableSet<Point> results = new TreeSet<Point>(new Comparator<Point>() {
+
+      @Override
+      public int compare(Point o1, Point o2) {
+        return Double.compare(point.distanceFrom(o1), point.distanceFrom(o2));
+      }
+
+    });
+
+    PriorityQueue<Bucket> queue = new PriorityQueue<Bucket>(Integer.MAX_VALUE,
+        new Comparator<Bucket>() {
+
+          @Override
+          public int compare(Bucket o1, Bucket o2) {
+            return Double.compare(o1.distanceFrom(point),
+                o2.distanceFrom(point));
+          }
+
+        });
+
+    double farthest = Double.MAX_VALUE;
+    int offset = 0;
+    Set<String> scannedBucketNames = new HashSet<String>();
+    do {
+      Iterable<Bucket> buckets = index.findBucketsInRange(new Range(point.x
+          - offset, point.x + offset), new Range(point.y - offset, point.y
+          + offset));
+
+      for (Bucket bucket : buckets) {
+        if (!scannedBucketNames.contains(bucket.toString())) {
+          queue.add(bucket);
+        }
+      }
+      if (queue.size() == 0) {
+        return results; // there are no buckets to be scanned.
+      }
+
+      for (Bucket bucket = queue.poll(); bucket != null; bucket = queue.poll()) {
+        if (bucket.distanceFrom(point) > farthest) {
+          return results;
+        }
+
+        for (Point p : bucket.scan()) {
+          if (results.size() < k) {
+            results.add(p); // results.size() is at most k.
+          } else {
+            results.add(p);
+            results.pollLast(); // remove the (k+1)-th point.
+            farthest = results.last().distanceFrom(point);
+          }
+        }
+        scannedBucketNames.add(bucket.toString());
+        int newOffset = (int) Math.ceil(Math.sqrt(point.distanceFrom(bucket
+            .farthestCornerFrom(point))));
+        offset = Math.max(offset, newOffset);
+      }
+    } while (true);
+
   }
 
   /*
