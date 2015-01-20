@@ -143,7 +143,9 @@ public class Index implements Closeable {
    */
   public Iterable<Bucket> findBucketsInRange(Range rx, Range ry)
       throws IOException {
-    byte[] startKey = Utils.bitwiseZip(rx.min, ry.min);
+    byte[] probeKey = Utils.bitwiseZip(rx.min, ry.min);
+    Result bucketEntry = indexTable.getRowOrBefore(probeKey, FAMILY_INFO);
+    byte[] startKey = bucketEntry.getRow();
     byte[] stopKey = Bytes.incrementBytes(Utils.bitwiseZip(rx.max, ry.max), 1L);
     Scan scan = new Scan(startKey, stopKey);
     scan.addFamily(FAMILY_INFO);
